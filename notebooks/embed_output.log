@@ -1,0 +1,57 @@
+Traceback (most recent call last):
+  File "C:\Users\HP\My_Documents\NLP with Deep Learning\assignment 3\nlp project\notebooks\embed_chunks.py", line 3, in <module>
+    from sentence_transformers import SentenceTransformer
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\sentence_transformers\__init__.py", line 10, in <module>
+    from sentence_transformers.backend import (
+    ...<3 lines>...
+    )
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\sentence_transformers\backend\__init__.py", line 3, in <module>
+    from .load import load_onnx_model, load_openvino_model
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\sentence_transformers\backend\load.py", line 7, in <module>
+    from transformers.configuration_utils import PretrainedConfig
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\transformers\__init__.py", line 30, in <module>
+    from . import dependency_versions_check
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\transformers\dependency_versions_check.py", line 16, in <module>
+    from .utils.versions import require_version, require_version_core
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\transformers\utils\__init__.py", line 22, in <module>
+    from .auto_docstring import (
+    ...<10 lines>...
+    )
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\transformers\utils\auto_docstring.py", line 32, in <module>
+    from .generic import ModelOutput
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\transformers\utils\generic.py", line 41, in <module>
+    import torch
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\__init__.py", line 2787, in <module>
+    from torch import (
+    ...<4 lines>...
+    )
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\export\__init__.py", line 11, in <module>
+    from torch.fx.passes.infra.pass_base import PassResult
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\fx\passes\__init__.py", line 1, in <module>
+    from . import (
+    ...<13 lines>...
+    )
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\fx\passes\graph_drawer.py", line 14, in <module>
+    from torch.fx.passes.shape_prop import TensorMetadata
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\fx\passes\shape_prop.py", line 11, in <module>
+    from torch._subclasses.meta_utils import is_sparse_any
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\_subclasses\__init__.py", line 2, in <module>
+    from torch._subclasses.fake_tensor import (
+    ...<4 lines>...
+    )
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\_subclasses\fake_tensor.py", line 3410, in <module>
+    from torch._subclasses.fake_impls import (  # noqa: F401
+    ...<8 lines>...
+    )
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\_subclasses\fake_impls.py", line 1308, in <module>
+    @register_op_impl([aten.convolution.default, aten.convolution_backward.default])
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\_ops.py", line 1240, in __getattr__
+    if not _has_script_object_arg(schema)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\_ops.py", line 1151, in _has_script_object_arg
+    return any(isinstance(arg.type, torch.ClassType) for arg in schema.arguments)
+  File "C:\Users\HP\AppData\Local\Programs\Python\Python313\Lib\site-packages\torch\_ops.py", line 1151, in <genexpr>
+    return any(isinstance(arg.type, torch.ClassType) for arg in schema.arguments)
+    
+KeyboardInterrupt

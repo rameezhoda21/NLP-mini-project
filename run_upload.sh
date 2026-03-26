@@ -1,0 +1,1 @@
+python notebooks/upload_to_pinecone.py
