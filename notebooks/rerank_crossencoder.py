@@ -22,9 +22,12 @@ Expected candidate chunk format (list of dictionaries):
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
+from urllib import request as urllib_request
+from urllib.error import HTTPError, URLError
 
 from sentence_transformers import CrossEncoder
 
@@ -32,6 +35,18 @@ from sentence_transformers import CrossEncoder
 # Cross-encoder model requested by the user.
 MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 TOP_K = 5
+ANSWER_TOP_K = 3
+
+# Hugging Face Inference API settings.
+HF_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
+HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
+
+# Supported env var names for Hugging Face token.
+HF_TOKEN_ENV_CANDIDATES = [
+    "HF_API_TOKEN",
+    "HUGGINGFACEHUB_API_TOKEN",
+    "HF_TOKEN",
+]
 
 # -----------------------------
 # Confidence gate settings
@@ -237,30 +252,164 @@ def assess_retrieval_confidence(
 
 
 def generate_answer_stub(query: str, top_chunks: list[dict[str, Any]]) -> str:
-    """
-    Placeholder for your real answer generation step.
+    """Backward-compatible wrapper. Kept for minimal code breakage."""
+    result = generate_grounded_answer_with_hf_api(query, top_chunks)
+    return result["final_answer"]
 
-    Replace this with your LLM call using top_chunks as context.
+
+def build_grounded_prompt(query: str, context_chunks: list[dict[str, Any]]) -> str:
     """
-    top_chunk_ids = [chunk["chunk_id"] for chunk in top_chunks]
+    Build a strict prompt that forces grounded legal QA behavior.
+
+    The model is explicitly told to:
+    - answer only from provided context
+    - never invent legal facts
+    - clearly say when evidence is insufficient
+    """
+    context_blocks: list[str] = []
+    for i, chunk in enumerate(context_chunks, start=1):
+        chunk_id = chunk.get("chunk_id", f"chunk_{i}")
+        title = chunk.get("title", "Untitled")
+        text = chunk.get("chunk_text", "")
+        context_blocks.append(
+            f"[Context {i}]\n"
+            f"Chunk ID: {chunk_id}\n"
+            f"Title: {title}\n"
+            f"Text:\n{text}"
+        )
+
+    context_section = "\n\n".join(context_blocks)
+
     return (
-        "Proceeding to answer generation with retrieved context. "
-        f"Top chunk_ids: {top_chunk_ids}"
+        "You are a careful legal assistant.\n"
+        "Use ONLY the context below to answer the user question.\n"
+        "Do NOT invent legal rules, sections, dates, or case facts.\n"
+        "If the answer is not clearly supported by the context, say: "
+        "'The provided context does not contain enough reliable information to answer this question.'\n"
+        "Keep your answer concise and factual.\n\n"
+        f"User Question:\n{query}\n\n"
+        f"Context:\n{context_section}\n\n"
+        "Final Answer:"
     )
 
 
-def run_confidence_gate_and_respond(query: str, top_chunks: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
+def call_huggingface_inference_api(prompt: str) -> str:
+    """
+    Send a prompt to Hugging Face Inference API and return model text.
+
+    Requires one of these environment variables:
+    - HF_API_TOKEN
+    - HUGGINGFACEHUB_API_TOKEN
+    - HF_TOKEN
+    """
+    hf_api_token = ""
+    for env_name in HF_TOKEN_ENV_CANDIDATES:
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            hf_api_token = value
+            break
+
+    if not hf_api_token:
+        raise RuntimeError(
+            "Missing Hugging Face API token. Set one of: "
+            "HF_API_TOKEN, HUGGINGFACEHUB_API_TOKEN, HF_TOKEN"
+        )
+
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 350,
+            "temperature": 0.2,
+            "do_sample": False,
+            "return_full_text": False,
+        }
+    }
+
+    req = urllib_request.Request(
+        HF_API_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {hf_api_token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib_request.urlopen(req, timeout=120) as resp:
+            response_text = resp.read().decode("utf-8")
+    except HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Hugging Face API HTTP error {exc.code}: {error_body}") from exc
+    except URLError as exc:
+        raise RuntimeError(f"Network error calling Hugging Face API: {exc}") from exc
+
+    parsed = json.loads(response_text)
+
+    # Common response shape: [{"generated_text": "..."}]
+    if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
+        generated = parsed[0].get("generated_text", "").strip()
+        if generated:
+            return generated
+
+    # Some endpoints return dict with error details.
+    if isinstance(parsed, dict) and "error" in parsed:
+        raise RuntimeError(f"Hugging Face API error: {parsed['error']}")
+
+    raise RuntimeError(f"Unexpected Hugging Face API response: {parsed}")
+
+
+def generate_grounded_answer_with_hf_api(query: str, top_chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Build grounded prompt from top chunks and get a final answer from HF API.
+
+    Returns a dictionary with:
+    - final_answer
+    - chunk_ids_used
+    """
+    chunk_ids_used = [str(chunk.get("chunk_id", "")) for chunk in top_chunks]
+    prompt = build_grounded_prompt(query, top_chunks)
+    final_answer = call_huggingface_inference_api(prompt)
+
+    return {
+        "final_answer": final_answer,
+        "chunk_ids_used": chunk_ids_used,
+    }
+
+
+def run_confidence_gate_and_respond(query: str, top_chunks: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
     """
     Apply confidence gate:
     - out-of-scope/low confidence -> fallback response
     - in-scope -> continue to answer generation
     """
-    diagnostics = assess_retrieval_confidence(query, top_chunks)
+    top_chunks_for_answer = top_chunks[:ANSWER_TOP_K]
+    diagnostics = assess_retrieval_confidence(query, top_chunks_for_answer)
 
     if not diagnostics["is_in_scope"]:
-        response = FALLBACK_RESPONSE
+        response = {
+            "final_answer": FALLBACK_RESPONSE,
+            "chunk_ids_used": [str(chunk.get("chunk_id", "")) for chunk in top_chunks_for_answer],
+            "confidence_status": "LOW_CONFIDENCE",
+        }
     else:
-        response = generate_answer_stub(query, top_chunks)
+        try:
+            answer_payload = generate_grounded_answer_with_hf_api(query, top_chunks_for_answer)
+            response = {
+                "final_answer": answer_payload["final_answer"],
+                "chunk_ids_used": answer_payload["chunk_ids_used"],
+                "confidence_status": "HIGH_CONFIDENCE",
+            }
+        except Exception as exc:
+            # Safe fallback in case API call fails.
+            response = {
+                "final_answer": (
+                    "I could not generate a reliable answer right now because the answer model "
+                    f"request failed: {exc}"
+                ),
+                "chunk_ids_used": [str(chunk.get("chunk_id", "")) for chunk in top_chunks_for_answer],
+                "confidence_status": "HIGH_CONFIDENCE_MODEL_ERROR",
+            }
 
     return response, diagnostics
 
@@ -332,7 +481,11 @@ def main() -> None:
     print(f"Reason                    : {diagnostics['reason']}")
 
     print("\nFinal pipeline output:")
-    print(response)
+    print("=" * 85)
+    print(f"Confidence status : {response['confidence_status']}")
+    print(f"Chunk IDs used    : {response['chunk_ids_used']}")
+    print("Final answer:")
+    print(response["final_answer"])
 
 
 if __name__ == "__main__":

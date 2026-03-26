@@ -6,6 +6,11 @@ __pycache__/
 .venv/
 venv/
 
+# Local environment variables
+.env
+.env.*
+!.env.example
+
 # VS Code temp runner files
 tempCodeRunnerFile.py
 notebooks/tempCodeRunnerFile.py
