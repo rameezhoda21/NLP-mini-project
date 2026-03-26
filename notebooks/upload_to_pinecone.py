@@ -14,11 +14,11 @@ BATCH_SIZE = 100               # Recommended batch size for Pinecone uploads
 USE_FILTERED_CHUNKS = True      # If True, keep only rows where is_retrievable == True
 
 def main():
-    # 1. Insert your Pinecone API key here, inside the quotes
-    api_key = "pcsk_5CRZGj_LTeaDvHWi3YbW6uWFXn2hfuTdRaXwWQdNp2knJ4LSTqfYnued3R3BBcPRxhErS1"
-    
-    if api_key == "PUT_YOUR_API_KEY_HERE":
-        print("Error: You need to replace 'PUT_YOUR_API_KEY_HERE' with your actual Pinecone API key in the script.")
+    # 1. Read Pinecone API key from environment for security.
+    api_key = os.environ.get("PINECONE_API_KEY", "").strip()
+
+    if not api_key:
+        print("Error: Set PINECONE_API_KEY in your environment before running this script.")
         return
 
     # 2. Load the pickle file

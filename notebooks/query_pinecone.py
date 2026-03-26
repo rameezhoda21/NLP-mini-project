@@ -9,15 +9,11 @@ INDEX_NAME = "legal-rag-index-filtered"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 def main():
-    # 1. Insert your Pinecone API key here
-    api_key = "pcsk_5CRZGj_LTeaDvHWi3YbW6uWFXn2hfuTdRaXwWQdNp2knJ4LSTqfYnued3R3BBcPRxhErS1"
-    
-    if api_key == "PUT_YOUR_API_KEY_HERE":
-        # Fallback to environment variable if they prefer that
-        api_key = os.environ.get("PINECONE_API_KEY")
-        if not api_key:
-            print("Error: Please replace 'PUT_YOUR_API_KEY_HERE' with your Pinecone API key.")
-            return
+    # 1. Read Pinecone API key from environment for security.
+    api_key = os.environ.get("PINECONE_API_KEY", "").strip()
+    if not api_key:
+        print("Error: Set PINECONE_API_KEY in your environment before running this script.")
+        return
 
     # 2. Get the search query from the user
     print("\n" + "="*50)
