@@ -51,15 +51,13 @@ RESULTS_CSV = EVAL_DIR / "ablation_results.csv"
 # ---------------------------------------------------------------------------
 EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 CROSS_ENCODER_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-HF_MODEL_ID = "Qwen/Qwen2.5-72B-Instruct"
+GROQ_MODEL_ID = "llama-3.1-8b-instant"
 
 SEMANTIC_TOP_K = 20
 BM25_TOP_K = 20
 FUSED_TOP_K = 10
 RERANK_TOP_K = 5
 ANSWER_TOP_K = 3
-
-HF_TOKEN_ENV_CANDIDATES = ["HF_API_TOKEN", "HUGGINGFACEHUB_API_TOKEN", "HF_TOKEN"]
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,44 +66,36 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# HF Inference API helper — uses huggingface_hub SDK (chat completions)
+# Groq API helper (Llama-3.1-8B)
 # ---------------------------------------------------------------------------
 
-def _get_hf_token() -> str:
-    for name in HF_TOKEN_ENV_CANDIDATES:
-        val = os.environ.get(name, "").strip()
-        if val:
-            return val
-    return ""
+_groq_client = None
 
-
-_hf_client = None
-
-def _get_hf_client():
-    global _hf_client
-    if _hf_client is None:
-        from huggingface_hub import InferenceClient
-        _hf_client = InferenceClient(token=_get_hf_token())
-    return _hf_client
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        from groq import Groq
+        _groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+    return _groq_client
 
 
 def call_hf_inference(prompt: str, max_tokens: int = 350, temperature: float = 0.2) -> str:
-    client = _get_hf_client()
+    client = _get_groq_client()
     for attempt in range(4):
         try:
-            resp = client.chat_completion(
-                model=HF_MODEL_ID,
+            resp = client.chat.completions.create(
+                model=GROQ_MODEL_ID,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=max_tokens,
-                temperature=temperature if temperature > 0 else None,
+                temperature=temperature,
             )
             text = resp.choices[0].message.content.strip()
             if not text:
-                raise RuntimeError("Empty response from HF API")
+                raise RuntimeError("Empty response from Groq API")
             return text
         except Exception as exc:
-            if "402" in str(exc) or "429" in str(exc):
-                wait = 15 * (attempt + 1)
+            if "429" in str(exc) or "rate" in str(exc).lower():
+                wait = 10 * (attempt + 1)
                 logger.warning("Rate limited, waiting %ds (attempt %d/4)...", wait, attempt + 1)
                 time.sleep(wait)
                 continue
@@ -346,9 +336,8 @@ def main():
     logger.info("=" * 70)
 
     # Validate environment
-    hf_token = _get_hf_token()
-    if not hf_token:
-        logger.error("HF API token not set. Export HF_API_TOKEN / HF_TOKEN and re-run.")
+    if not os.environ.get("GROQ_API_KEY", "").strip():
+        logger.error("GROQ_API_KEY not set. Export it and re-run.")
         sys.exit(1)
 
     # Load test queries

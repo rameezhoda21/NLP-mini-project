@@ -11,7 +11,7 @@ Usage:
     python evaluation/evaluate_rag.py
 
 Required env vars:
-    PINECONE_API_KEY, HF_API_TOKEN
+    HF_API_TOKEN (or HF_TOKEN / HUGGINGFACEHUB_API_TOKEN)
 """
 
 from __future__ import annotations
@@ -26,8 +26,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
-from urllib import request as urllib_request
-from urllib.error import HTTPError, URLError
+from groq import Groq
 
 import numpy as np
 import pandas as pd
@@ -48,11 +47,9 @@ RESULTS_CSV = EVAL_DIR / "evaluation_results.csv"
 # ---------------------------------------------------------------------------
 # Model / index config (mirrors app.py and notebooks)
 # ---------------------------------------------------------------------------
-INDEX_NAME = "legal-rag-index-filtered"
 EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 CROSS_ENCODER_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-HF_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
+GROQ_MODEL_ID = "llama-3.1-8b-instant"
 
 SEMANTIC_TOP_K = 20
 BM25_TOP_K = 20
@@ -86,41 +83,37 @@ def _get_hf_token() -> str:
     return ""
 
 
-def call_hf_inference(prompt: str, max_tokens: int = 350, temperature: float = 0.2) -> str:
-    token = _get_hf_token()
-    if not token:
-        raise RuntimeError("Missing HF API token.")
-    payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": max_tokens,
-            "temperature": temperature,
-            "do_sample": False,
-            "return_full_text": False,
-        },
-    }
-    req = urllib_request.Request(
-        HF_API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib_request.urlopen(req, timeout=120) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-    except HTTPError as exc:
-        err = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HF API error {exc.code}: {err}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"Network error: {exc}") from exc
+_groq_client = None
 
-    if isinstance(body, list) and body and isinstance(body[0], dict):
-        text = body[0].get("generated_text", "").strip()
-        if text:
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+    return _groq_client
+
+
+def call_hf_inference(prompt: str, max_tokens: int = 350, temperature: float = 0.2) -> str:
+    """Call Groq API for LLM inference (Llama-3.1-8B). Retries on rate limits."""
+    client = _get_groq_client()
+    for attempt in range(4):
+        try:
+            resp = client.chat.completions.create(
+                model=GROQ_MODEL_ID,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            text = resp.choices[0].message.content.strip()
+            if not text:
+                raise RuntimeError("Empty response from Groq API")
             return text
-    if isinstance(body, dict) and "error" in body:
-        raise RuntimeError(f"HF API error: {body['error']}")
-    raise RuntimeError(f"Unexpected response: {body}")
+        except Exception as exc:
+            if "429" in str(exc) or "rate" in str(exc).lower():
+                wait = 10 * (attempt + 1)
+                time.sleep(wait)
+                continue
+            raise
+    raise RuntimeError("Groq API rate limit exceeded after 4 retries")
 
 
 # ---------------------------------------------------------------------------
@@ -146,17 +139,18 @@ def build_bm25(df: pd.DataFrame) -> BM25Okapi:
     return BM25Okapi([legal_tokenize(t) for t in df["chunk_text"]])
 
 
-def semantic_search(query: str, model: SentenceTransformer, api_key: str, top_k: int = SEMANTIC_TOP_K) -> list[str]:
-    from pinecone import Pinecone as PineconeClient
-    embedding = model.encode(query).tolist()
-    pc = PineconeClient(api_key=api_key)
-    index = pc.Index(INDEX_NAME)
-    response = index.query(vector=embedding, top_k=top_k, include_metadata=True)
-    ids = []
-    for match in response.get("matches", []):
-        meta = match.get("metadata") or {}
-        ids.append(str(meta.get("chunk_id", match.get("id"))))
-    return ids
+def semantic_search(
+    query: str,
+    df: pd.DataFrame,
+    embeddings: np.ndarray,
+    model: SentenceTransformer,
+    top_k: int = SEMANTIC_TOP_K,
+) -> list[str]:
+    """Local semantic search using pre-computed embeddings (no Pinecone needed)."""
+    query_emb = model.encode([query])
+    sims = cosine_similarity(query_emb, embeddings)[0]
+    top_indices = np.argsort(sims)[::-1][:top_k]
+    return [df.iloc[i]["chunk_id"] for i in top_indices]
 
 
 def bm25_search(df: pd.DataFrame, bm25: BM25Okapi, query: str, top_k: int = BM25_TOP_K) -> list[str]:
@@ -211,18 +205,17 @@ def build_grounded_prompt(query: str, chunks: list[dict]) -> str:
 
 def run_single_query(
     query: str,
-    pinecone_key: str,
     chunks_df: pd.DataFrame,
+    chunk_embeddings: np.ndarray,
     bm25: BM25Okapi,
     embed_model: SentenceTransformer,
     cross_encoder: CrossEncoder,
     retrieval_mode: str = "hybrid",
 ) -> dict[str, Any]:
-    allowed_ids = set(chunks_df["chunk_id"].tolist())
     sem_ids, bm25_ids = [], []
 
     if retrieval_mode in ("semantic", "hybrid"):
-        sem_ids = [i for i in semantic_search(query, embed_model, pinecone_key) if i in allowed_ids]
+        sem_ids = semantic_search(query, chunks_df, chunk_embeddings, embed_model)
     if retrieval_mode in ("bm25", "hybrid"):
         bm25_ids = bm25_search(chunks_df, bm25, query)
 
@@ -360,13 +353,8 @@ def main():
     logger.info("=" * 70)
 
     # Validate environment
-    pinecone_key = os.environ.get("PINECONE_API_KEY", "").strip()
-    hf_token = _get_hf_token()
-    if not pinecone_key:
-        logger.error("PINECONE_API_KEY not set. Export it and re-run.")
-        sys.exit(1)
-    if not hf_token:
-        logger.error("HF_API_TOKEN not set. Export it and re-run.")
+    if not os.environ.get("GROQ_API_KEY", "").strip():
+        logger.error("GROQ_API_KEY not set. Export it and re-run.")
         sys.exit(1)
 
     # Load test queries
@@ -387,6 +375,9 @@ def main():
     logger.info("Loading embedding model: %s", EMBED_MODEL_NAME)
     embed_model = SentenceTransformer(EMBED_MODEL_NAME)
 
+    logger.info("Pre-computing chunk embeddings for local semantic search...")
+    chunk_embeddings = embed_model.encode(chunks_df["chunk_text"].tolist(), show_progress_bar=True)
+
     logger.info("Loading cross-encoder: %s", CROSS_ENCODER_NAME)
     cross_encoder = CrossEncoder(CROSS_ENCODER_NAME)
 
@@ -401,8 +392,8 @@ def main():
         try:
             pipeline_result = run_single_query(
                 query=query,
-                pinecone_key=pinecone_key,
                 chunks_df=chunks_df,
+                chunk_embeddings=chunk_embeddings,
                 bm25=bm25,
                 embed_model=embed_model,
                 cross_encoder=cross_encoder,
@@ -448,8 +439,8 @@ def main():
 
         logger.info("  Faithfulness=%.2f  Relevancy=%.2f", faith["score"], rel["score"])
 
-        # Rate limiting: brief pause between queries
-        time.sleep(1)
+        # Rate limiting
+        time.sleep(3)
 
     # Save results
     results_df = pd.DataFrame(results)

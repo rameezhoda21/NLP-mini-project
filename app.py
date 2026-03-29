@@ -20,8 +20,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
-from urllib import request as urllib_request
-from urllib.error import HTTPError, URLError
+from groq import Groq
 
 import numpy as np
 import pandas as pd
@@ -42,8 +41,7 @@ logger = logging.getLogger(__name__)
 INDEX_NAME = "legal-rag-index-filtered"
 EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 CROSS_ENCODER_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-HF_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
+GROQ_MODEL_ID = "llama-3.1-8b-instant"
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 CHUNKS_CSV = DATA_DIR / "rag_chunks_with_retrievable_flag.csv"
@@ -89,46 +87,37 @@ def _get_hf_token() -> str:
     return ""
 
 
+_groq_client = None
+
+def _get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+    return _groq_client
+
+
 def call_hf_inference(prompt: str, max_tokens: int = 350, temperature: float = 0.2) -> str:
-    """Call HF Inference API. Raises RuntimeError on failure."""
-    token = _get_hf_token()
-    if not token:
-        raise RuntimeError("Missing HF API token (set HF_API_TOKEN env var).")
-
-    payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": max_tokens,
-            "temperature": temperature,
-            "do_sample": False,
-            "return_full_text": False,
-        },
-    }
-    req = urllib_request.Request(
-        HF_API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib_request.urlopen(req, timeout=120) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-    except HTTPError as exc:
-        err = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"HF API error {exc.code}: {err}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"Network error: {exc}") from exc
-
-    if isinstance(body, list) and body and isinstance(body[0], dict):
-        text = body[0].get("generated_text", "").strip()
-        if text:
+    """Call Groq API for LLM inference (Llama-3.1-8B). Retries on rate limits."""
+    client = _get_groq_client()
+    for attempt in range(4):
+        try:
+            resp = client.chat.completions.create(
+                model=GROQ_MODEL_ID,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            text = resp.choices[0].message.content.strip()
+            if not text:
+                raise RuntimeError("Empty response from Groq API")
             return text
-    if isinstance(body, dict) and "error" in body:
-        raise RuntimeError(f"HF API error: {body['error']}")
-    raise RuntimeError(f"Unexpected HF API response: {body}")
+        except Exception as exc:
+            if "429" in str(exc) or "rate" in str(exc).lower():
+                wait = 10 * (attempt + 1)
+                time.sleep(wait)
+                continue
+            raise
+    raise RuntimeError("Groq API rate limit exceeded after 4 retries")
 
 
 # ---------------------------------------------------------------------------

@@ -16,6 +16,9 @@ easyocr>=1.7.0
 # --- Embeddings & reranking ---
 sentence-transformers>=2.2.0
 
+# --- LLM Inference (Groq) ---
+groq>=0.9.0
+
 # --- Vector database ---
 pinecone>=3.0.0
 
