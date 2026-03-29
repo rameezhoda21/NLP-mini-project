@@ -26,9 +26,8 @@ import os
 import re
 from pathlib import Path
 from typing import Any
-from urllib import request as urllib_request
-from urllib.error import HTTPError, URLError
 
+from groq import Groq
 from sentence_transformers import CrossEncoder
 
 
@@ -37,16 +36,8 @@ MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 TOP_K = 5
 ANSWER_TOP_K = 3
 
-# Hugging Face Inference API settings.
-HF_MODEL_ID = "mistralai/Mistral-7B-Instruct-v0.2"
-HF_API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}"
-
-# Supported env var names for Hugging Face token.
-HF_TOKEN_ENV_CANDIDATES = [
-    "HF_API_TOKEN",
-    "HUGGINGFACEHUB_API_TOKEN",
-    "HF_TOKEN",
-]
+# Groq API settings (Llama-3.1-8B-Instruct).
+GROQ_MODEL_ID = "llama-3.1-8b-instant"
 
 # -----------------------------
 # Confidence gate settings
@@ -295,68 +286,21 @@ def build_grounded_prompt(query: str, context_chunks: list[dict[str, Any]]) -> s
 
 def call_huggingface_inference_api(prompt: str) -> str:
     """
-    Send a prompt to Hugging Face Inference API and return model text.
+    Send a prompt to Groq API (Llama-3.1-8B) and return model text.
 
-    Requires one of these environment variables:
-    - HF_API_TOKEN
-    - HUGGINGFACEHUB_API_TOKEN
-    - HF_TOKEN
+    Requires environment variable: GROQ_API_KEY
     """
-    hf_api_token = ""
-    for env_name in HF_TOKEN_ENV_CANDIDATES:
-        value = os.environ.get(env_name, "").strip()
-        if value:
-            hf_api_token = value
-            break
-
-    if not hf_api_token:
-        raise RuntimeError(
-            "Missing Hugging Face API token. Set one of: "
-            "HF_API_TOKEN, HUGGINGFACEHUB_API_TOKEN, HF_TOKEN"
-        )
-
-    payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 350,
-            "temperature": 0.2,
-            "do_sample": False,
-            "return_full_text": False,
-        }
-    }
-
-    req = urllib_request.Request(
-        HF_API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {hf_api_token}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+    resp = client.chat.completions.create(
+        model=GROQ_MODEL_ID,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=350,
+        temperature=0.2,
     )
-
-    try:
-        with urllib_request.urlopen(req, timeout=120) as resp:
-            response_text = resp.read().decode("utf-8")
-    except HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Hugging Face API HTTP error {exc.code}: {error_body}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"Network error calling Hugging Face API: {exc}") from exc
-
-    parsed = json.loads(response_text)
-
-    # Common response shape: [{"generated_text": "..."}]
-    if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
-        generated = parsed[0].get("generated_text", "").strip()
-        if generated:
-            return generated
-
-    # Some endpoints return dict with error details.
-    if isinstance(parsed, dict) and "error" in parsed:
-        raise RuntimeError(f"Hugging Face API error: {parsed['error']}")
-
-    raise RuntimeError(f"Unexpected Hugging Face API response: {parsed}")
+    text = resp.choices[0].message.content.strip()
+    if not text:
+        raise RuntimeError("Empty response from Groq API")
+    return text
 
 
 def generate_grounded_answer_with_hf_api(query: str, top_chunks: list[dict[str, Any]]) -> dict[str, Any]:
