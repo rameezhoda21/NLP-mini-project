@@ -1,44 +1,139 @@
-chunk_strategy,retrieval_mode,query_id,faithfulness,relevancy
-Legal-Aware,Hybrid + Reranking,Q01,1.0,0.92
-Legal-Aware,Hybrid + Reranking,Q02,1.0,0.76
-Legal-Aware,Hybrid + Reranking,Q03,1.0,0.95
-Legal-Aware,Hybrid + Reranking,Q04,1.0,0.7
-Legal-Aware,Hybrid + Reranking,Q05,1.0,0.86
-Legal-Aware,Hybrid + Reranking,Q06,1.0,0.93
-Legal-Aware,Hybrid + Reranking,Q07,1.0,0.87
-Legal-Aware,Hybrid + Reranking,Q08,1.0,0.43
-Legal-Aware,Hybrid + Reranking,Q09,1.0,0.61
-Legal-Aware,Hybrid + Reranking,Q10,0.0,0.06
-Legal-Aware,Hybrid + Reranking,Q11,1.0,0.06
-Legal-Aware,Hybrid + Reranking,Q12,0.0,0.03
-Legal-Aware,Hybrid + Reranking,Q13,1.0,0.7
-Legal-Aware,Hybrid + Reranking,Q14,0.0,0.1
-Legal-Aware,Hybrid + Reranking,Q15,1.0,0.62
-Legal-Aware,Semantic-Only,Q01,0.0,0.07
-Legal-Aware,Semantic-Only,Q02,1.0,0.76
-Legal-Aware,Semantic-Only,Q03,1.0,0.95
-Legal-Aware,Semantic-Only,Q04,0.29,0.7
-Legal-Aware,Semantic-Only,Q05,1.0,0.9
-Legal-Aware,Semantic-Only,Q06,1.0,0.95
-Legal-Aware,Semantic-Only,Q07,0.4,0.82
-Legal-Aware,Semantic-Only,Q08,0.88,0.45
-Legal-Aware,Semantic-Only,Q09,1.0,0.62
-Legal-Aware,Semantic-Only,Q10,0.0,0.06
-Legal-Aware,Semantic-Only,Q11,0.0,0.04
-Legal-Aware,Semantic-Only,Q12,0.0,0.01
-Legal-Aware,Semantic-Only,Q13,1.0,0.7
-Legal-Aware,Semantic-Only,Q14,1.0,0.8
-Legal-Aware,Semantic-Only,Q15,0.0,0.16
-Fixed-Size,Hybrid + Reranking,Q01,0.0,0.04
-Fixed-Size,Hybrid + Reranking,Q02,0.75,0.77
-Fixed-Size,Hybrid + Reranking,Q03,0.25,0.95
-Fixed-Size,Hybrid + Reranking,Q04,0.67,0.68
-Fixed-Size,Hybrid + Reranking,Q05,0.71,0.84
-Fixed-Size,Hybrid + Reranking,Q06,1.0,0.85
-Fixed-Size,Hybrid + Reranking,Q07,1.0,0.8
-Fixed-Size,Hybrid + Reranking,Q08,1.0,0.39
-Fixed-Size,Hybrid + Reranking,Q09,0.62,0.58
-Fixed-Size,Hybrid + Reranking,Q10,1.0,0.87
-Fixed-Size,Hybrid + Reranking,Q11,0.33,0.45
-Fixed-Size,Hybrid + Reranking,Q12,0.0,0.02
-Fixed-Size,Hybrid + Reranking,Q13,1.0,0.5
+"config","chunk_strategy","retrieval_mode","query_id","query","answer","faithfulness","relevancy"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q01","What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?","The definition of ""Prosecutor"" under the Sindh Criminal Prosecution Service Act 2009 is:
+
+""(l) “Prosecutor” means the Prosecutor General, Additional Prosecutor General, Deputy Prosecutor General, Assistant Prosecutor General, District Public Prosecutor, Deputy District Public Prosecutor, Assistant District Public Prosecutor and a Public Prosecutor appointed under this Act and shall be deemed to be the Public Prosecutor under the Code;""","1.0","0.917"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q02","What are the qualifications required for the appointment of the Prosecutor General?","The qualifications required for the appointment of the Prosecutor General are:
+
+- A citizen of Pakistan
+- Permanent residence of the Province of Sindh
+- Not less than forty-five years of age
+- Either:
+  - Has been an Advocate of the High Court for a period of, or periods aggregating, not less than ten years (Context 1 and Context 2)
+  - Has performed specific functions and meets certain conditions (Context 2)","0.8","0.821"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q03","What are the duties of Prosecutors under the Sindh Criminal Prosecution Service Act?","The duties of Prosecutors under the Sindh Criminal Prosecution Service Act include:
+
+- Performing their functions and exercising their powers fairly, honestly, with due diligence, in the public interest, and to uphold justice.
+- Scrutinizing police reports, including final or interim reports, and processing them under section 9.
+- Making entries in the record and registers as may be prescribed.
+- Performing such other duties as may be delegated to them by the Prosecutor General Sindh under this ","1.0","0.898"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q04","What are the responsibilities of Police towards Prosecutors under the Act?","The provided context does not contain enough reliable information to answer this question.","0.0","0.016"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q05","How is the Sindh Criminal Prosecution Service established and constituted?","The Sindh Criminal Prosecution Service is established and maintained by the Government, as stated in sections 3 of the Sindh Criminal Prosecution Service Act 2009 (Context 1 and Context 2).","0.667","0.882"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q06","What is the procedure for recording a confession under the Sindh Criminal Court Rules 2012?","The confession shall be recorded in the manner prescribed for recording of evidence, as determined by the Magistrate to be best suited for the circumstances of the case. The confession is to be recorded on the prescribed Form No.1 Appendix 'A'.","1.0","0.677"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q07","How is an identification parade conducted according to the Sindh Criminal Court Rules?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.017"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q08","What rules govern the submission of sentences for confirmation and their execution?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.029"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q09","What are the rules for appeals and revision applications before courts other than the High Court?","The provided context does not contain enough reliable information to answer this question about the rules for appeals and revision applications before courts other than the High Court.","0.0","0.848"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q10","What is the procedure for proceedings against absconders under the Sindh Criminal Court Rules?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.032"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q11","What amendments were made to the Sindh Criminal Prosecution Service Act in 2014?","The provided context does not contain enough reliable information to answer this question about the amendments made to the Sindh Criminal Prosecution Service Act in 2014.","0.0","0.951"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q12","What changes did the 2015 Amendment Act introduce regarding the definition of District?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.023"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q13","What are the rules for disposal of unclaimed property by Magistrates?","The provided context does not contain enough reliable information to answer this question.","0.0","0.102"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q14","What powers does the Government have to make rules under the Sindh Criminal Prosecution Service Act?","The provided context does not contain enough reliable information to answer this question.","0.0","0.048"
+"Legal-Aware + Hybrid + Reranking","Legal-Aware","Hybrid + Reranking","Q15","What are the rules regarding production of evidence recorded in digital video disc in Court?","The rules regarding production of evidence recorded in digital video disc in Court, as per the provided context, are:
+
+- The party producing the digital video disc recorded evidence must also produce the transcript of the digital video disc (referred to as D.V.D.).","1.0","0.845"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q01","What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?","The provided context does not contain enough reliable information to answer this question.","0.0","0.036"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q02","What are the qualifications required for the appointment of the Prosecutor General?","The qualifications required for the appointment of the Prosecutor General are:
+
+- A citizen of Pakistan
+- Permanent residence of the Province of Sindh
+- Not less than forty-five years of age
+- An Advocate of the High Court for a period of, or for the period aggregating, not less than ten years.","1.0","0.811"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q03","What are the duties of Prosecutors under the Sindh Criminal Prosecution Service Act?","The duties of Prosecutors under the Sindh Criminal Prosecution Service Act are as follows:
+
+- To perform their functions and exercise their powers fairly, honestly, with due diligence, in the public interest, and to uphold justice.
+- On receipt of a police report, to scrutinize it and process it under section 9.
+- To make entries in the record and registers as may be prescribed.
+- To perform such other duties as may be delegated to them by the Prosecutor General Sindh under the Act.","1.0","0.908"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q04","What are the responsibilities of Police towards Prosecutors under the Act?","The provided context does not contain enough reliable information to answer this question.","0.0","0.07"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q05","How is the Sindh Criminal Prosecution Service established and constituted?","According to the provided context, the Sindh Criminal Prosecution Service is established and maintained by the Government, as stated in sections 3 of both the Consolidated Sindh Criminal Prosecution Service Act and the Sindh Criminal Prosecution Service Act 2009.","1.0","0.902"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q06","What is the procedure for recording a confession under the Sindh Criminal Court Rules 2012?","The procedure for recording a confession under the Sindh Criminal Court Rules 2012 is as follows:
+
+1. The Magistrate may record the confession of an accused produced before him for recording of such confession on the prescribed Form No.1 Appendix 'A' (Context 2).
+2. The confession shall be recorded in the manner prescribed for recording of evidence, as deemed best fitted for the circumstances of the case (Context 3).
+3. The confession so recorded shall be signed in the manner provided in Section","0.833","0.931"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q07","How is an identification parade conducted according to the Sindh Criminal Court Rules?","The provided context does not contain enough reliable information to answer this question about how an identification parade is conducted according to the Sindh Criminal Court Rules.","0.0","0.948"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q08","What rules govern the submission of sentences for confirmation and their execution?","The provided context does not contain enough reliable information to answer this question about the rules governing the submission of sentences for confirmation and their execution.","0.0","0.783"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q09","What are the rules for appeals and revision applications before courts other than the High Court?","The provided context does not contain enough reliable information to answer this question.","0.0","0.016"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q10","What is the procedure for proceedings against absconders under the Sindh Criminal Court Rules?","The provided context does not contain enough reliable information to answer this question.","0.0","0.009"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q11","What amendments were made to the Sindh Criminal Prosecution Service Act in 2014?","The provided context does not contain enough reliable information to answer this question about the amendments made to the Sindh Criminal Prosecution Service Act in 2014.","0.0","0.951"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q12","What changes did the 2015 Amendment Act introduce regarding the definition of District?","The provided context does not contain enough reliable information to answer this question regarding the 2015 Amendment Act and its changes to the definition of ""District"".","0.0","0.935"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q13","What are the rules for disposal of unclaimed property by Magistrates?","The provided context does not contain enough reliable information to answer this question.","0.0","0.057"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q14","What powers does the Government have to make rules under the Sindh Criminal Prosecution Service Act?","The provided context does not contain enough reliable information to answer this question.","0.0","0.068"
+"Legal-Aware + Semantic-Only","Legal-Aware","Semantic-Only","Q15","What are the rules regarding production of evidence recorded in digital video disc in Court?","The provided context does not contain enough reliable information to answer this question regarding the rules regarding production of evidence recorded in digital video disc in Court.","0.0","0.805"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q01","What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?","The provided context does not contain enough reliable information to answer this question.","0.0","0.049"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q02","What are the qualifications required for the appointment of the Prosecutor General?","A person shall not be appointed as Prosecutor General unless he is a citizen of Pakistan, and is not less than forty five years of age, and meets one of the following conditions:
+
+- He has, for a period of, or for the periods aggregating, not less than ten years, been an Advocate of the High Court; 
+- He has, for a period of not less than five years, performed functions of an Additional Prosecutor General and is enrolled as an Advocate of High Court; 
+- He has, for a period of not less than seve","1.0","0.832"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q03","What are the duties of Prosecutors under the Sindh Criminal Prosecution Service Act?","The duties of Prosecutors under the Sindh Criminal Prosecution Service Act are:
+
+- To perform their functions and exercise their powers fairly, honestly, with due diligence, in the public interest, and to uphold justice.
+- On receipt of the police report, to scrutinize it and process it under section 9.
+- To make such entries in the record and registers as may be prescribed.
+- To perform such other duties as may be delegated to them by the Prosecutor General Sindh under this Act.
+- To conduct pr","0.75","0.831"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q04","What are the responsibilities of Police towards Prosecutors under the Act?","The provided context does not contain enough reliable information to answer this question.","0.0","0.03"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q05","How is the Sindh Criminal Prosecution Service established and constituted?","The Sindh Criminal Prosecution Service is established and constituted as follows:
+
+- The Service is established by the Government (Section 3 of the Act).
+- The Service consists of the Prosecutor General, Additional Prosecutors General, Deputy Prosecutors General, District Public Prosecutors, Deputy District Public Prosecutors, and Assistant District Public Prosecutors (Section 4 of the Act).
+- The administration of the Service vests in the Government (Section 5 of the Act).
+- The Prosecutor Gene","1.0","0.838"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q06","What is the procedure for recording a confession under the Sindh Criminal Court Rules 2012?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.022"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q07","How is an identification parade conducted according to the Sindh Criminal Court Rules?","The identification parade was conducted by me personally with the help of the two respectable witnesses, viz _________________ and ____________________ whose signatures have been obtained in token of what took place in their presence. 
+
+According to the Sindh Criminal Court Rules 2012, the identification parade should be conducted by a Magistrate.","0.429","0.924"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q08","What rules govern the submission of sentences for confirmation and their execution?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.008"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q09","What are the rules for appeals and revision applications before courts other than the High Court?","The provided context does not contain enough reliable information to answer this question.","0.0","0.027"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q10","What is the procedure for proceedings against absconders under the Sindh Criminal Court Rules?","The provided context does not contain enough reliable information to answer this question.","0.0","0.019"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q11","What amendments were made to the Sindh Criminal Prosecution Service Act in 2014?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.019"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q12","What changes did the 2015 Amendment Act introduce regarding the definition of District?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.046"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q13","What are the rules for disposal of unclaimed property by Magistrates?","The provided context does not contain enough reliable information to answer the question regarding the rules for disposal of unclaimed property by Magistrates.","0.0","0.885"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q14","What powers does the Government have to make rules under the Sindh Criminal Prosecution Service Act?","The Government has the power to make rules under the Sindh Criminal Prosecution Service Act as stated in Section 13 of the Act, which states: ""Government may, by notification, in the official gazette make rules for carrying out the purposes of this Act.""","1.0","0.862"
+"Fixed-Size + Hybrid + Reranking","Fixed-Size","Hybrid + Reranking","Q15","What are the rules regarding production of evidence recorded in digital video disc in Court?","The rules regarding production of evidence recorded in digital video disc in Court are as follows:
+
+- The party producing the digital video disc recorded evidence shall also produce the transcript of the digital video disc (Section 19.1).
+- The Court or its authorized officer shall accept only such digital video discs as are under the seal of the parties producing them (Section 19.2).
+- The Court may send the digital video disc to a Government or reputed private computer forensics lab for verifi","0.0","0.817"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q01","What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?","The provided context does not contain enough reliable information to answer this question.","0.0","0.051"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q02","What are the qualifications required for the appointment of the Prosecutor General?","A person shall not be appointed as Prosecutor General unless he is a citizen of Pakistan, and is not less than forty five years of age, and meets one of the following qualifications:
+
+(a) he has, for a period of, or for the periods aggregating, not less than ten years, been an Advocate of the High Court; or enrolled as an Advocate of the Supreme Court; or
+
+(b) he has, for a period of not less than five years, performed functions of an Additional Prosecutor General and is enrolled as an Advocate ","1.0","0.777"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q03","What are the duties of Prosecutors under the Sindh Criminal Prosecution Service Act?","The duties of Prosecutors under the Sindh Criminal Prosecution Service Act are:
+
+- To perform their functions and exercise their powers fairly, honestly, with due diligence, in the public interest, and to uphold justice.
+- On receipt of the police report, to scrutinize the same and process it under section 9.
+- To make such entries in the record and registers as may be prescribed.
+- To perform such other duties as may be delegated to them by the Prosecutor General Sindh under this Act.
+- To main","1.0","0.842"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q04","What are the responsibilities of Police towards Prosecutors under the Act?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.028"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q05","How is the Sindh Criminal Prosecution Service established and constituted?","The Sindh Criminal Prosecution Service is established and constituted as follows:
+
+- It is established under Section 3 of the Sindh Criminal Prosecution Service (Constitution, Functions and Powers) Act, 2009.
+- The Service is constituted under Section 4 of the Act.
+- The Service is administered under Section 5 of the Act, which states that the Government shall have control and administration over the Service.
+- The Prosecutor General is appointed under Section 6 of the Act, and the qualification","1.0","0.852"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q06","What is the procedure for recording a confession under the Sindh Criminal Court Rules 2012?","The procedure for recording a confession under the Sindh Criminal Court Rules 2012 is as follows:
+
+- The confession is recorded in accordance with Chapter 5, Rule 3.
+- The form for recording a confession is provided in Appendix 'A', Form No. 1, Page 101.","1.0","0.89"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q07","How is an identification parade conducted according to the Sindh Criminal Court Rules?","According to the Sindh Criminal Court Rules 2012, an identification parade is conducted as follows:
+
+- The witness should not see the person to be identified before the identification proceedings commence.
+- No communication that would facilitate identification should be made to any witness awaiting their turn to identify.
+- After making identification, witnesses should not communicate with other witnesses who have yet to do so.
+- Precautions should be taken when the person to be identified is h","0.25","0.826"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q08","What rules govern the submission of sentences for confirmation and their execution?","The provided context does not contain enough reliable information to answer this question regarding the rules governing the submission of sentences for confirmation and their execution.","0.0","0.729"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q09","What are the rules for appeals and revision applications before courts other than the High Court?","The provided context does not contain enough reliable information to answer this question regarding the rules for appeals and revision applications before courts other than the High Court.","0.0","0.764"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q10","What is the procedure for proceedings against absconders under the Sindh Criminal Court Rules?","The provided context does not contain enough reliable information to answer this question.","0.0","0.026"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q11","What amendments were made to the Sindh Criminal Prosecution Service Act in 2014?","The provided context does not contain enough reliable information to answer this question.","0.0","0.011"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q12","What changes did the 2015 Amendment Act introduce regarding the definition of District?","The provided context does not contain enough reliable information to answer this question.","0.0","-0.016"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q13","What are the rules for disposal of unclaimed property by Magistrates?","The provided context does not contain enough reliable information to answer this question.","0.0","0.039"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q14","What powers does the Government have to make rules under the Sindh Criminal Prosecution Service Act?","The Government has the power to make rules under the Sindh Criminal Prosecution Service Act as stated in Section 13 of the Act, which reads: ""Government may, by notification, in the official gazette make rules for carrying out the purposes of this Act.""","1.0","0.918"
+"Fixed-Size + Semantic-Only","Fixed-Size","Semantic-Only","Q15","What are the rules regarding production of evidence recorded in digital video disc in Court?","The rules regarding production of evidence recorded in digital video disc (D.V.D) in Court, as per the Sindh Criminal Court Rules 2012, are as follows:
+
+- The Court may send the D.V.D to a Government or private Computer Forensics Lab for verification of its originality and/or identification of tempering (Rule 19.3).
+- The Court or officer shall play the video to verify the transcript and endorse the verification on the transcript (Rule 19.4).
+- The D.V.D shall be kept in safe custody in a cover ","1.0","0.68"
