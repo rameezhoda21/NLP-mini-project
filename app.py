@@ -446,7 +446,7 @@ def main():
     st.title("Sindh Criminal Prosecution Law — RAG System")
     st.caption(
         "Hybrid retrieval (BM25 + Pinecone) with RRF fusion, cross-encoder reranking, "
-        "and Mistral-7B answer generation via HF Inference API."
+        "and Llama-3.1-8B answer generation via Groq API."
     )
 
     # --- Sidebar: configuration ---
@@ -457,11 +457,11 @@ def main():
         if not pinecone_key:
             pinecone_key = st.text_input("Pinecone API Key", type="password")
 
-        hf_token = _get_hf_token()
-        if not hf_token:
-            hf_token = st.text_input("HF API Token", type="password")
-            if hf_token:
-                os.environ["HF_API_TOKEN"] = hf_token
+        groq_key = os.environ.get("GROQ_API_KEY", "")
+        if not groq_key:
+            groq_key = st.text_input("Groq API Key", type="password")
+            if groq_key:
+                os.environ["GROQ_API_KEY"] = groq_key
 
         st.divider()
         retrieval_mode = st.selectbox(
@@ -476,7 +476,7 @@ def main():
 
         st.divider()
         st.markdown(
-            "**Pipeline:** Hybrid Retrieval → RRF → Cross-Encoder → Confidence Gate → Mistral-7B"
+            "**Pipeline:** Hybrid Retrieval → RRF → Cross-Encoder → Confidence Gate → Llama-3.1-8B"
         )
 
     # --- Load models & data ---
