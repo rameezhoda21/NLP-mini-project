@@ -1,0 +1,92 @@
+[
+  {
+    "id": "Q01",
+    "query": "What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?",
+    "category": "definition",
+    "source_doc": "DOC02"
+  },
+  {
+    "id": "Q02",
+    "query": "What are the qualifications required for the appointment of the Prosecutor General?",
+    "category": "appointment",
+    "source_doc": "DOC02"
+  },
+  {
+    "id": "Q03",
+    "query": "What are the duties of Prosecutors under the Sindh Criminal Prosecution Service Act?",
+    "category": "duties",
+    "source_doc": "DOC02"
+  },
+  {
+    "id": "Q04",
+    "query": "What are the responsibilities of Police towards Prosecutors under the Act?",
+    "category": "procedure",
+    "source_doc": "DOC02"
+  },
+  {
+    "id": "Q05",
+    "query": "How is the Sindh Criminal Prosecution Service established and constituted?",
+    "category": "establishment",
+    "source_doc": "DOC02"
+  },
+  {
+    "id": "Q06",
+    "query": "What is the procedure for recording a confession under the Sindh Criminal Court Rules 2012?",
+    "category": "procedure",
+    "source_doc": "DOC01"
+  },
+  {
+    "id": "Q07",
+    "query": "How is an identification parade conducted according to the Sindh Criminal Court Rules?",
+    "category": "procedure",
+    "source_doc": "DOC01"
+  },
+  {
+    "id": "Q08",
+    "query": "What rules govern the submission of sentences for confirmation and their execution?",
+    "category": "sentencing",
+    "source_doc": "DOC01"
+  },
+  {
+    "id": "Q09",
+    "query": "What are the rules for appeals and revision applications before courts other than the High Court?",
+    "category": "appeals",
+    "source_doc": "DOC01"
+  },
+  {
+    "id": "Q10",
+    "query": "What is the procedure for proceedings against absconders under the Sindh Criminal Court Rules?",
+    "category": "procedure",
+    "source_doc": "DOC01"
+  },
+  {
+    "id": "Q11",
+    "query": "What amendments were made to the Sindh Criminal Prosecution Service Act in 2014?",
+    "category": "amendment",
+    "source_doc": "DOC04"
+  },
+  {
+    "id": "Q12",
+    "query": "What changes did the 2015 Amendment Act introduce regarding the definition of District?",
+    "category": "amendment",
+    "source_doc": "DOC05"
+  },
+  {
+    "id": "Q13",
+    "query": "What are the rules for disposal of unclaimed property by Magistrates?",
+    "category": "property",
+    "source_doc": "DOC01"
+  },
+  {
+    "id": "Q14",
+    "query": "What powers does the Government have to make rules under the Sindh Criminal Prosecution Service Act?",
+    "category": "powers",
+    "source_doc": "DOC02"
+  },
+  {
+    "id": "Q15",
+    "query": "What are the rules regarding production of evidence recorded in digital video disc in Court?",
+    "category": "evidence",
+    "source_doc": "DOC01"
+  }
+]

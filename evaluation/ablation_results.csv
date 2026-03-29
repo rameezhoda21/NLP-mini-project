@@ -1,0 +1,44 @@
+chunk_strategy,retrieval_mode,query_id,faithfulness,relevancy
+Legal-Aware,Hybrid + Reranking,Q01,1.0,0.92
+Legal-Aware,Hybrid + Reranking,Q02,1.0,0.76
+Legal-Aware,Hybrid + Reranking,Q03,1.0,0.95
+Legal-Aware,Hybrid + Reranking,Q04,1.0,0.7
+Legal-Aware,Hybrid + Reranking,Q05,1.0,0.86
+Legal-Aware,Hybrid + Reranking,Q06,1.0,0.93
+Legal-Aware,Hybrid + Reranking,Q07,1.0,0.87
+Legal-Aware,Hybrid + Reranking,Q08,1.0,0.43
+Legal-Aware,Hybrid + Reranking,Q09,1.0,0.61
+Legal-Aware,Hybrid + Reranking,Q10,0.0,0.06
+Legal-Aware,Hybrid + Reranking,Q11,1.0,0.06
+Legal-Aware,Hybrid + Reranking,Q12,0.0,0.03
+Legal-Aware,Hybrid + Reranking,Q13,1.0,0.7
+Legal-Aware,Hybrid + Reranking,Q14,0.0,0.1
+Legal-Aware,Hybrid + Reranking,Q15,1.0,0.62
+Legal-Aware,Semantic-Only,Q01,0.0,0.07
+Legal-Aware,Semantic-Only,Q02,1.0,0.76
+Legal-Aware,Semantic-Only,Q03,1.0,0.95
+Legal-Aware,Semantic-Only,Q04,0.29,0.7
+Legal-Aware,Semantic-Only,Q05,1.0,0.9
+Legal-Aware,Semantic-Only,Q06,1.0,0.95
+Legal-Aware,Semantic-Only,Q07,0.4,0.82
+Legal-Aware,Semantic-Only,Q08,0.88,0.45
+Legal-Aware,Semantic-Only,Q09,1.0,0.62
+Legal-Aware,Semantic-Only,Q10,0.0,0.06
+Legal-Aware,Semantic-Only,Q11,0.0,0.04
+Legal-Aware,Semantic-Only,Q12,0.0,0.01
+Legal-Aware,Semantic-Only,Q13,1.0,0.7
+Legal-Aware,Semantic-Only,Q14,1.0,0.8
+Legal-Aware,Semantic-Only,Q15,0.0,0.16
+Fixed-Size,Hybrid + Reranking,Q01,0.0,0.04
+Fixed-Size,Hybrid + Reranking,Q02,0.75,0.77
+Fixed-Size,Hybrid + Reranking,Q03,0.25,0.95
+Fixed-Size,Hybrid + Reranking,Q04,0.67,0.68
+Fixed-Size,Hybrid + Reranking,Q05,0.71,0.84
+Fixed-Size,Hybrid + Reranking,Q06,1.0,0.85
+Fixed-Size,Hybrid + Reranking,Q07,1.0,0.8
+Fixed-Size,Hybrid + Reranking,Q08,1.0,0.39
+Fixed-Size,Hybrid + Reranking,Q09,0.62,0.58
+Fixed-Size,Hybrid + Reranking,Q10,1.0,0.87
+Fixed-Size,Hybrid + Reranking,Q11,0.33,0.45
+Fixed-Size,Hybrid + Reranking,Q12,0.0,0.02
+Fixed-Size,Hybrid + Reranking,Q13,1.0,0.5
