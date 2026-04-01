@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 INDEX_NAME = "legal-rag-index-filtered"
 EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 CROSS_ENCODER_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-GROQ_MODEL_ID = "llama-3.1-8b-instant"
+GROQ_MODEL_ID = "llama-3.3-70b-versatile"
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 CHUNKS_CSV = DATA_DIR / "rag_chunks_with_retrievable_flag.csv"
