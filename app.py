@@ -4,7 +4,7 @@ Streamlit RAG app for Sindh Criminal Prosecution Law.
 Integrates the full pipeline:
   1) Hybrid retrieval  (BM25 + Pinecone semantic) with RRF fusion
   2) Cross-encoder reranking + confidence gate
-  3) LLM answer generation via HF Inference API (Mistral-7B)
+  3) LLM answer generation via Groq API (Llama-3.3-70B)
   4) Live Faithfulness & Relevancy scoring (LLM-as-a-Judge)
 
 Designed for deployment on Hugging Face Spaces.
@@ -97,7 +97,7 @@ def _get_groq_client():
 
 
 def call_hf_inference(prompt: str, max_tokens: int = 350, temperature: float = 0.2) -> str:
-    """Call Groq API for LLM inference (Llama-3.1-8B). Retries on rate limits."""
+    """Call Groq API for LLM inference (Llama-3.3-70B). Retries on rate limits."""
     client = _get_groq_client()
     for attempt in range(4):
         try:
@@ -446,38 +446,22 @@ def main():
     st.title("Sindh Criminal Prosecution Law — RAG System")
     st.caption(
         "Hybrid retrieval (BM25 + Pinecone) with RRF fusion, cross-encoder reranking, "
-        "and Llama-3.1-8B answer generation via Groq API."
+        "and Llama-3.3-70B answer generation via Groq API."
     )
 
-    # --- Sidebar: configuration ---
-    with st.sidebar:
-        st.header("Configuration")
+    # --- API keys (from env or sidebar fallback) ---
+    pinecone_key = os.environ.get("PINECONE_API_KEY", "")
+    groq_key = os.environ.get("GROQ_API_KEY", "")
 
-        pinecone_key = os.environ.get("PINECONE_API_KEY", "")
-        if not pinecone_key:
-            pinecone_key = st.text_input("Pinecone API Key", type="password")
-
-        groq_key = os.environ.get("GROQ_API_KEY", "")
-        if not groq_key:
-            groq_key = st.text_input("Groq API Key", type="password")
-            if groq_key:
-                os.environ["GROQ_API_KEY"] = groq_key
-
-        st.divider()
-        retrieval_mode = st.selectbox(
-            "Retrieval Mode",
-            ["hybrid", "semantic", "bm25"],
-            index=0,
-            help="hybrid = BM25 + Semantic with RRF fusion (recommended)",
-        )
-
-        run_eval = st.checkbox("Run Faithfulness & Relevancy scoring", value=False,
-                               help="Adds ~30s per query via LLM-as-a-Judge calls")
-
-        st.divider()
-        st.markdown(
-            "**Pipeline:** Hybrid Retrieval → RRF → Cross-Encoder → Confidence Gate → Llama-3.1-8B"
-        )
+    # Show key inputs only if not set in environment
+    if not pinecone_key or not groq_key:
+        with st.expander("API Keys (required)", expanded=True):
+            if not pinecone_key:
+                pinecone_key = st.text_input("Pinecone API Key", type="password")
+            if not groq_key:
+                groq_key = st.text_input("Groq API Key", type="password")
+                if groq_key:
+                    os.environ["GROQ_API_KEY"] = groq_key
 
     # --- Load models & data ---
     if not CHUNKS_CSV.exists():
@@ -488,16 +472,33 @@ def main():
     embed_model = load_embed_model()
     cross_encoder = load_cross_encoder()
 
-    st.info(f"Loaded **{len(chunks_df)}** retrievable legal chunks from {CHUNKS_CSV.name}")
+    st.info(f"Loaded **{len(chunks_df)}** retrievable legal chunks  |  "
+            f"**Pipeline:** Hybrid Retrieval → RRF → Cross-Encoder → Confidence Gate → Llama-3.3-70B")
 
-    # --- Query input ---
-    query = st.text_area(
-        "Enter your legal question:",
-        placeholder="e.g., What are the powers of the Prosecutor General under the Sindh Act?",
-        height=80,
-    )
+    # --- Query input (Enter to submit via st.form) ---
+    with st.form("query_form", clear_on_submit=False):
+        query = st.text_input(
+            "Enter your legal question:",
+            placeholder="e.g., What are the powers of the Prosecutor General under the Sindh Act?",
+        )
 
-    if st.button("Search & Generate Answer", type="primary", disabled=not query.strip()):
+        # Settings row below input
+        opt_col1, opt_col2, opt_col3 = st.columns([2, 2, 1])
+        with opt_col1:
+            retrieval_mode = st.selectbox(
+                "Retrieval Mode",
+                ["hybrid", "semantic", "bm25"],
+                index=0,
+                help="hybrid = BM25 + Semantic with RRF fusion (recommended)",
+            )
+        with opt_col2:
+            run_eval = st.checkbox("Run Faithfulness & Relevancy scoring",
+                                   value=False,
+                                   help="Adds ~30s per query via LLM-as-a-Judge calls")
+        with opt_col3:
+            submitted = st.form_submit_button("Search", type="primary", use_container_width=True)
+
+    if submitted and query.strip():
         if not pinecone_key and retrieval_mode in ("semantic", "hybrid"):
             st.error("Pinecone API key is required for semantic/hybrid retrieval.")
             return
