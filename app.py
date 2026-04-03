@@ -45,6 +45,9 @@ BM25_TOP_K = 20
 FUSED_TOP_K = 10
 RERANK_TOP_K = 5
 ANSWER_TOP_K = 3
+FALLBACK_RESPONSE = (
+    "I could not find a reliable answer to this question in the retrieved documents."
+)
 
 HF_TOKEN_ENV_CANDIDATES = ["HF_API_TOKEN", "HUGGINGFACEHUB_API_TOKEN", "HF_TOKEN"]
 
