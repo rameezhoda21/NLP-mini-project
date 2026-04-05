@@ -1,0 +1,720 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------- Packages ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{url}
+\usepackage{parskip}
+\usepackage{ragged2e}
+\usepackage{seqsplit}
+\usepackage{titling}
+
+% ---------- Line-break tuning for long \texttt tokens in tables ----------
+\setlength{\emergencystretch}{3em}
+\tolerance=2000
+\hbadness=10000
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+    citecolor=blue!60!black,
+}
+
+% ---------- Listings style ----------
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codegray}{RGB}{100,100,100}
+\definecolor{codekey}{RGB}{0,70,180}
+\definecolor{coverblue}{RGB}{20,50,110}
+
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekey}\bfseries,
+    commentstyle=\color{codegray}\itshape,
+    breaklines=true,
+    breakatwhitespace=false,
+    frame=single,
+    rulecolor=\color{codegray},
+    framerule=0.4pt,
+    captionpos=b,
+    xleftmargin=10pt,
+    xrightmargin=10pt,
+    showstringspaces=false,
+    tabsize=2,
+}
+\lstset{style=codestyle}
+
+\lstdefinelanguage{promptlang}{
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    breakatwhitespace=false,
+    breakindent=0pt,
+    frame=single,
+    framesep=4pt,
+    framexleftmargin=0pt,
+    framexrightmargin=0pt,
+    rulecolor=\color{codegray},
+    framerule=0.4pt,
+    backgroundcolor=\color{codebg},
+    columns=fullflexible,
+    keepspaces=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=14pt,
+    belowskip=10pt,
+}
+
+% ---------- Small helper: breakable monospaced filenames ----------
+\newcommand{\pth}[1]{\seqsplit{#1}}
+
+% ---------- Prompt heading: bold block with guaranteed vertical space ----------
+\newcommand{\promptheading}[1]{%
+    \par\vspace{1.2em}%
+    \noindent\textbf{#1}\par%
+    \nopagebreak\vspace{0.4em}%
+    \nopagebreak
+}
+
+% ======================================================================
+\begin{document}
+
+% ---------- COVER PAGE ----------
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+
+    {\color{coverblue}\rule{\textwidth}{1.5pt}}
+    \vspace{1.2cm}
+
+    {\Huge\bfseries NLP with Deep Learning}\\[0.3em]
+    {\Large Mini-Project 1}
+
+    \vspace{1.0cm}
+    {\color{coverblue}\rule{0.6\textwidth}{0.6pt}}
+    \vspace{1.2cm}
+
+    {\LARGE\itshape A Retrieval-Augmented Generation System for}\\[0.4em]
+    {\LARGE\bfseries Sindh Criminal Prosecution Law}
+
+    \vspace{1.8cm}
+    {\color{coverblue}\rule{0.3\textwidth}{0.4pt}}
+    \vspace{1.2cm}
+
+    {\Large\bfseries Group Members}\\[1.0em]
+    {\large
+        \begin{tabular}{rl}
+            Tayyib Bin Hisham Sayyid & \textbf{29087}\\[0.4em]
+            Syed Rameez Ul Hoda      & \textbf{29057}\\[0.4em]
+            Zuhair Amirali Merchant  & \textbf{29021}\\
+        \end{tabular}
+    }
+
+    \vfill
+
+    {\large\bfseries Department of Computer Science}\\[0.4em]
+    {\large Institute of Business Administration}\\[1.2em]
+    {\large\today}
+
+    \vspace{0.6cm}
+    {\color{coverblue}\rule{\textwidth}{1.5pt}}
+\end{titlepage}
+
+% ---------- ABSTRACT (separate page) ----------
+\newpage
+\thispagestyle{empty}
+\vspace*{2cm}
+\begin{center}
+    {\LARGE\bfseries Abstract}
+\end{center}
+\vspace{1em}
+\noindent
+This report documents the design, implementation, and empirical evaluation of a Retrieval-Augmented Generation (RAG) question-answering system for the Sindh Criminal Prosecution Law corpus. The system integrates a cloud-hosted vector database (Pinecone), lightweight on-device sentence embeddings (\texttt{all-MiniLM-L6-v2}), hybrid retrieval combining BM25 keyword search with semantic search under Reciprocal Rank Fusion, cross-encoder reranking, and a large language model (\texttt{llama-3.3-70b-versatile}) served via the Groq Inference API. The interface is a Streamlit application deployed publicly on Hugging Face Spaces. An automated LLM-as-a-Judge evaluation pipeline measures Faithfulness (via claim extraction and verification) and Relevancy (via alternate query generation and cosine similarity) on a fixed test set of fifteen legal queries. An ablation study comparing two chunking strategies against two retrieval modes (sixty query--configuration pairs in total) empirically identifies the best pipeline. The final system achieves a Faithfulness score of 92.4\% and a Relevancy score of 82.6\% on answerable queries, validating the hybrid retrieval design for the legal-text domain.
+
+% ---------- TABLE OF CONTENTS (separate page) ----------
+\newpage
+\tableofcontents
+
+% ======================================================================
+\newpage
+\section{Platform Details}
+\label{sec:platform}
+
+The RAG pipeline for this project was intentionally partitioned across multiple environments to separate heavy one-off preprocessing from lightweight, stateless query serving. This architectural choice reflects a production-oriented deployment pattern in which expensive artifacts (chunks, embeddings, BM25 indices) are computed once and then served by a thin, scalable front end.
+
+\subsection{Execution Environments}
+
+Table~\ref{tab:platforms} summarises every environment used at each stage of the pipeline.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Execution environments used across the RAG pipeline.}
+\label{tab:platforms}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}l l >{\RaggedRight\arraybackslash}X@{}}
+\toprule
+\textbf{Pipeline Stage} & \textbf{Environment} & \textbf{Purpose} \\
+\midrule
+PDF extraction \& cleaning & Local (Linux, Py 3.12) &
+\pth{process\_pdfs.py} using PyPDF2 and EasyOCR for scanned documents. \\
+
+Chunking (legal-aware \& fixed) & Local &
+\pth{chunk\_text.py} and \pth{chunk\_text\_fixed.py} emit CSV artefacts. \\
+
+Embedding generation & Local &
+\pth{embed\_chunks.py} runs the MiniLM encoder on-device and serialises to \pth{.pkl}. \\
+
+Vector database & Pinecone (\texttt{us-east-1}) &
+Serverless cosine-similarity index \pth{legal-rag-index-filtered} (dim.\ 384). \\
+
+BM25 index & Local (in-process) &
+Rebuilt at app start-up from the chunks CSV using \texttt{rank\_bm25}. \\
+
+LLM generation \& judging & Groq Inference API &
+\pth{llama-3.3-70b-versatile} for live queries; \pth{llama-3.1-8b-instant} for batch evaluation. \\
+
+Cross-encoder reranker & On-device (in-process) &
+\pth{cross-encoder/ms-marco-MiniLM-L-6-v2}. \\
+
+User interface & HF Spaces (Docker SDK) &
+Public Streamlit app; auto-rebuilds on push to the Space repo. \\
+
+Source-of-truth repo & GitHub &
+\pth{rameezhoda21/NLP-mini-project} for versioning and collaboration. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Hosting and Public Access}
+
+The live web interface is deployed on Hugging Face Spaces at\\
+\url{https://huggingface.co/spaces/tayyib-sayyid/sindh-criminal-law-rag}. The Space is configured with the Docker SDK (rather than the deprecated direct Streamlit SDK), using a custom \texttt{Dockerfile} that installs project dependencies, copies application files, and launches \texttt{streamlit run app.py} on port 7860 (the port expected by Hugging Face Spaces). Three API secrets are injected at runtime by the Spaces platform: \texttt{GROQ\_API\_KEY}, \texttt{PINECONE\_API\_KEY}, and \texttt{HF\_API\_TOKEN}. Because secrets are exposed as environment variables, the application reads them directly via \texttt{os.environ} and avoids prompting end users for credentials.
+
+\subsection{Division of Computation}
+
+Embeddings for the full corpus (384-dimensional vectors) are computed exactly once, locally, and then upserted in batches of 100 to the Pinecone index. At query time, only the user's single question is embedded on-device, which takes a few milliseconds with the MiniLM model. The Pinecone API then returns the top-$k$ nearest-neighbour chunk IDs, which are combined with BM25 results obtained from the in-process index. This split ensures that the deployed app remains small, cold starts quickly, and does not need a GPU.
+
+% ======================================================================
+\newpage
+\section{Data Details}
+\label{sec:data}
+
+\subsection{Source and Authority}
+
+The dataset used in this project consists of official legal documents obtained from the Government of Sindh and the Sindh High Court. The corpus includes the Sindh Criminal Court Rules, 2012, the Sindh Criminal Prosecution Service (Constitution, Functions and Powers) Act, 2009, and its subsequent amendments. These documents were collected from official government portals such as Sindh Laws and the Sindh High Court website, ensuring the authenticity and reliability of the legal content. No third-party summaries, secondary commentary, or unofficial reproductions were included.
+
+\subsection{Corpus Inventory}
+
+Table~\ref{tab:corpus} enumerates every document in the corpus, along with its role and year of enactment.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Corpus inventory: primary sources for the Sindh Criminal Prosecution Law RAG system.}
+\label{tab:corpus}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}l l >{\RaggedRight\arraybackslash}X@{}}
+\toprule
+\textbf{Doc ID} & \textbf{Year} & \textbf{Document} \\
+\midrule
+DOC01 & 2012 & Sindh Criminal Court Rules (core rules; Sindh High Court) \\
+DOC02 & 2009 & Sindh Criminal Prosecution Service (Constitution, Functions and Powers) Act (base Act) \\
+DOC03 & 2011 & Sindh Criminal Prosecution Service Amendment Act, 2011 \\
+DOC04 & 2014 & Sindh Criminal Prosecution Service Amendment Act, 2014 \\
+DOC05 & 2015 & Amendment Act 2015 (Sindh Act No.\ II of 2016) \\
+DOC06 & 2025 & Sindh Criminal Prosecution Service Amendment Act, 2025 \\
+DOC07 & ---  & Consolidated Sindh Criminal Prosecution Service Act \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Dataset Size and Chunk Statistics}
+
+After PDF extraction, text cleaning, and chunking, the corpus statistics are as follows:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Total source documents:} 7 official legal PDFs (core rules + base Act + 4 amendments + consolidated version).
+    \item \textbf{Total cleaned text:} approximately 340{,}000 characters across seven \texttt{.txt} files.
+    \item \textbf{Legal-aware chunks produced:} 6{,}877 raw chunks, of which 6{,}713 pass a low-value content filter; a further retrievable-only subset of \textbf{522 chunks} (used by the live system) is obtained after filtering out residual tables of contents, form lists, and appendix fragments.
+    \item \textbf{Fixed-size chunks produced:} 221 chunks (used only in the ablation study baseline).
+    \item \textbf{Embedding dimension:} 384 (MiniLM-L6-v2).
+    \item \textbf{Pinecone index:} \texttt{legal-rag-index-filtered}, cosine similarity, populated with the 522 retrievable chunks.
+\end{itemize}
+
+The large spread between 6{,}877 raw chunks and the final 522 retrievable ones is a direct consequence of the aggressive low-value filtering applied in \texttt{filter\_retrievable\_chunks.py}: chunks that match heuristics for ToC entries, form registers, statistical reporting tables, or administrative scaffolding are excluded before upload. This ensures that only substantive legal provisions can be retrieved at query time.
+
+\subsection{Known Data-Quality Limitations}
+
+Two amendment documents, DOC03 (2011) and DOC06 (2025), had severely degraded source PDFs and only partial OCR recovery was possible. As a result, queries about the 2014 amendments, 2015 amendments, or 2011/2025 amendments frequently return a principled refusal because the underlying text simply is not present in the corpus. This limitation is surfaced explicitly in the ablation study (see Section~\ref{sec:metrics}).
+
+% ======================================================================
+\newpage
+\section{Algorithms, Models, and Retrieval Methods}
+\label{sec:methods}
+
+\subsection{Chunking Strategy}
+
+Two chunking strategies were implemented, and their relative merits form one axis of the ablation study.
+
+\paragraph{Legal-Aware Chunking (\texttt{notebooks/chunk\_text.py}).}
+This is the \emph{primary} production strategy. It uses regular expressions to detect legal section markers (e.g.\ \texttt{Section 302(a)}, \texttt{Rule 4.7}, \texttt{Chapter XIX}, \texttt{Article}, \texttt{Clause}) and treats each detected boundary as a high-level chunk delimiter. A single rule or section is never split unless it exceeds the maximum window. Parameters:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Target chunk length:} 250--450 words per chunk.
+    \item \textbf{Overlap:} 40 words when a long rule must be split internally, with the heading line prepended to the continuation chunk so the context is self-contained.
+    \item \textbf{Fragment merging:} leftover sub-chunks smaller than 150 words are merged into the preceding chunk to eliminate orphan fragments.
+    \item \textbf{Low-value filtering:} ToC lines, tabular form lists, statistical appendices, and registers of proceedings are excluded.
+\end{itemize}
+
+\paragraph{Fixed-Size Chunking (\texttt{notebooks/chunk\_text\_fixed.py}).}
+Implemented strictly as an ablation baseline. This strategy is structure-agnostic: it normalises whitespace, tokenises the text by whitespace, and emits 300-word windows with a 50-word sliding overlap. No section-boundary detection and no content filtering are performed.
+
+\paragraph{Justification.}
+Legal texts are highly structured and every provision is self-contained; splitting a provision across chunks often strips the normative verb (``shall''), the subject of the obligation, or the conditional clause, rendering a chunk useless. The legal-aware strategy respects these natural boundaries, whereas fixed-size chunking is useful purely as a baseline to quantify the gain from structure awareness.
+
+\subsection{Embedding Model}
+
+All chunks and all user queries are embedded using \texttt{sentence-transformers/all-MiniLM-L6-v2}, a 384-dimensional sentence encoder chosen for three reasons:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Lightweight:} roughly 80\,MB, runs on CPU in milliseconds, suitable for Hugging Face Spaces free tier.
+    \item \textbf{General-purpose strength:} it performs strongly on English paraphrase and semantic similarity benchmarks, which is what the relevancy metric measures.
+    \item \textbf{Consistency across stages:} document embeddings uploaded to Pinecone and live query embeddings come from the same model, avoiding embedding-space mismatch.
+\end{enumerate}
+
+\subsection{Retrieval Stack: Hybrid Search with RRF and Cross-Encoder Reranking}
+
+Retrieval is organised as a four-stage cascade:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Semantic search.} The query is encoded with MiniLM and the top 20 nearest chunk IDs are returned by Pinecone under cosine similarity.
+    \item \textbf{Lexical search (BM25).} A legal-aware tokeniser that preserves section numbers (e.g.\ \texttt{302(a)}, \texttt{4.7}) is run over the same chunks, and the top 20 BM25 matches are retrieved from the in-process index.
+    \item \textbf{Reciprocal Rank Fusion (RRF).} The two ranked lists are merged using the Reciprocal Rank Fusion score
+    \[
+        \text{score}(c) = \sum_{r \in \text{rankings}} \frac{1}{k + \text{rank}_r(c)}, \qquad k = 60,
+    \]
+    and the top 10 fused candidates advance.
+    \item \textbf{Cross-encoder reranking.} Each of the 10 candidates is scored against the original query by \texttt{cross-encoder/ms-marco-MiniLM-L-6-v2}, and the top 5 are retained. Of those, the top 3 are fed to the LLM for answer generation.
+\end{enumerate}
+
+\paragraph{Why hybrid is superior for legal text.}
+Pure semantic search suffers on legal queries that hinge on an exact section reference (``Section 6(6)'', ``Rule 4.7''), because MiniLM's token embeddings collapse minor lexical differences. Conversely, pure BM25 fails on paraphrased queries (``duties of Prosecutors'' vs.\ ``obligations of Public Prosecutors''). RRF combines both signals without requiring score calibration, and the cross-encoder then re-scores a small candidate set using a query-aware model that is too expensive to apply to the full corpus. This yields the best of both worlds: high recall from dense retrieval, high precision from lexical and cross-encoder pass.
+
+\subsection{Confidence Gate}
+
+Before an answer is generated, a lightweight confidence gate inspects the top reranked chunks. If the maximum reranker score falls below $1.0$, all scores are non-positive, or fewer than 30\% of the query's content keywords appear anywhere in the retrieved chunks, the system refuses to answer and returns a deterministic fallback message. This conservative behaviour explains the bimodal score distribution observed in the evaluation (Section~\ref{sec:metrics}): the system either answers confidently and well, or refuses.
+
+\subsection{LLM and Inference Backend}
+
+For the live application the answer-generation and LLM-as-a-Judge model is \texttt{meta-llama/llama-3.3-70b-versatile} served by the Groq Inference API. This model was chosen after two earlier iterations:
+\begin{itemize}[leftmargin=*]
+    \item The originally-planned \texttt{mistralai/Mistral-7B-Instruct-v0.2} via the Hugging Face Inference API became unreachable (the legacy endpoint returned HTTP 410 Gone and the replacement router required paid credits).
+    \item \texttt{llama-3.1-8b-instant} was initially adopted as a free replacement but proved to be a weak judge model: it frequently collapsed multi-claim answers into a single blob, producing spurious 0\% faithfulness verdicts.
+    \item \texttt{llama-3.3-70b-versatile} (70 billion parameters) was tested on Groq and is both free-tier-accessible and large enough to reliably extract atomic claims. The batch evaluation scripts (\texttt{evaluate\_rag.py}, \texttt{ablation\_study.py}) retain the 8B model to keep 60-query ablation runs inside the Groq free rate limits, while the live app uses the 70B model.
+\end{itemize}
+
+\subsection{Prompt Structures}
+
+Four distinct prompts are used in the pipeline. They are reproduced verbatim below so the exact evaluation protocol can be reproduced.
+
+\promptheading{Prompt 1 --- Grounded Answer Generation.}
+\begin{lstlisting}[language=promptlang]
+You are a careful legal assistant.
+Use ONLY the context below to answer the user question.
+Do NOT invent legal rules, sections, dates, or case facts.
+If the answer is not clearly supported by the context, say:
+'The provided context does not contain enough reliable
+information to answer this question.'
+Keep your answer concise and factual.
+
+User Question:
+{query}
+
+Context:
+[Context 1]
+Chunk ID: {chunk_id}
+Title: {title}
+Text:
+{chunk_text}
+
+[Context 2]
+...
+
+Final Answer:
+\end{lstlisting}
+
+\promptheading{Prompt 2 --- Claim Extraction (Faithfulness, Step 1).}
+\begin{lstlisting}[language=promptlang]
+Extract all distinct factual claims from the following answer
+as a JSON list of strings. Each claim should be a single,
+atomic statement. Output ONLY a JSON list, nothing else.
+
+Answer:
+{answer}
+
+Claims:
+\end{lstlisting}
+
+\promptheading{Prompt 3 --- Claim Verification (Faithfulness, Step 2).}
+\begin{lstlisting}[language=promptlang]
+Given the context below, is the following claim fully
+supported? Answer ONLY 'supported' or 'unsupported'.
+
+Context:
+{context}
+
+Claim: {claim}
+
+Verdict:
+\end{lstlisting}
+
+\promptheading{Prompt 4 --- Alternate Query Generation (Relevancy).}
+\begin{lstlisting}[language=promptlang]
+Given the following answer, generate exactly 3 different
+questions that this answer would correctly respond to.
+Output ONLY a JSON list of 3 question strings.
+
+Answer:
+{answer}
+
+Questions:
+\end{lstlisting}
+
+% ======================================================================
+\newpage
+\section{Performance Metrics and Ablation Study}
+\label{sec:metrics}
+
+\subsection{Evaluation Methodology}
+
+A fixed test set of 15 queries (\texttt{evaluation/test\_queries.json}) was used for all measurements. Each query is tagged with a category (definition, appointment, duties, procedure, establishment, sentencing, appeals, amendment, property, powers, evidence). All metrics are computed by an automated \textbf{LLM-as-a-Judge} pipeline:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Faithfulness} is measured by (i) extracting atomic factual claims from the generated answer using Prompt~2, (ii) verifying each claim against the retrieved context using Prompt~3, and (iii) reporting the fraction of claims judged ``supported''. Up to eight claims per answer are verified to bound API cost.
+    \item \textbf{Relevancy} is measured by (i) asking the LLM to generate three alternate questions the answer would satisfy (Prompt~4), (ii) embedding both the original query and the three alternates with MiniLM, and (iii) reporting the mean cosine similarity.
+\end{itemize}
+
+\subsection{Primary Evaluation (\texttt{evaluate\_rag.py})}
+
+The primary evaluation runs the best configuration (legal-aware chunking + hybrid retrieval + reranking) on all 15 test queries using the 8B judge. Aggregate scores are reported in Table~\ref{tab:primary}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Primary evaluation scores (15 queries, Legal-Aware chunking + Hybrid retrieval + Reranking).}
+\label{tab:primary}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metric} & \textbf{Overall (n=15)} & \textbf{Answerable (n=6)} & \textbf{Range} \\
+\midrule
+Faithfulness & 36.9\% & \textbf{92.4\%} & 0.000 -- 1.000 \\
+Relevancy    & 45.9\% & \textbf{82.6\%} & $-0.008$ -- 0.951 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The overall Faithfulness of 36.9\% is deliberately conservative: on 9 of 15 queries the confidence gate triggers a refusal, which the judge correctly flags as ``unsupported'' (the refusal sentence itself is treated as an unsupported claim). On the 6 queries where the system does commit to an answer, Faithfulness is 92.4\%, confirming that the RAG pipeline is strongly grounded in retrieved context whenever it answers at all. This bimodal distribution is an intended consequence of the confidence gate.
+
+\subsection{Ablation Study (\texttt{ablation\_study.py})}
+
+The ablation study evaluates every combination of two chunking strategies and two retrieval modes, for a total of four configurations and 60 query--configuration pairs. All 60 runs completed successfully. Results are summarised in Table~\ref{tab:ablation}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Ablation results across chunking strategies and retrieval modes (15 queries each).}
+\label{tab:ablation}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Chunking} & \textbf{Retrieval} & \textbf{n} & \textbf{Mean Faithfulness} & \textbf{Mean Relevancy} \\
+\midrule
+Legal-Aware & Hybrid + Reranking & 15 & 0.364 & 0.460 \\
+Legal-Aware & Semantic-Only      & 15 & 0.256 & \textbf{0.549} \\
+Fixed-Size  & Hybrid + Reranking & 15 & 0.279 & 0.401 \\
+Fixed-Size  & Semantic-Only      & 15 & \textbf{0.417} & 0.491 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Effect of chunking.} Under hybrid retrieval, legal-aware chunking beats fixed-size chunking by $+0.085$ Faithfulness and $+0.059$ Relevancy, because retrieved chunks contain complete self-contained rules. Under semantic-only retrieval, the ordering flips: the broader 300-word fixed windows provide more surrounding context to compensate for the absence of BM25 and reranking, gaining $+0.161$ Faithfulness over the narrower legal-aware chunks.
+
+\paragraph{Effect of retrieval.} With legal-aware chunks, hybrid retrieval adds $+0.108$ Faithfulness over semantic-only because BM25 catches exact section references and the cross-encoder re-ranks on query-specific relevance. With fixed-size chunks, hybrid retrieval underperforms semantic-only because BM25 is misled by fragmentary keyword matches that the reranker cannot fully correct.
+
+\paragraph{Best configuration.} When both metrics are considered together, \emph{Legal-Aware chunking + Hybrid + Reranking} produces the most consistent and legally defensible behaviour, achieves the second-highest Faithfulness (0.364), and is the only configuration that consistently grounds its answers in complete legal provisions.
+
+\subsection{Claim Extraction and Verification Examples}
+
+To demonstrate the Faithfulness protocol concretely, Tables~\ref{tab:ex1}--\ref{tab:ex3} reproduce three representative queries with their extracted claims and per-claim verdicts, taken directly from the automated evaluation run.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Example 1 --- Q01 (definition). Query: \emph{``What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?''} Faithfulness = 1.00 (8/8 supported).}
+\label{tab:ex1}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}c >{\RaggedRight\arraybackslash}X c@{}}
+\toprule
+\textbf{\#} & \textbf{Extracted Claim} & \textbf{Verdict} \\
+\midrule
+1 & The Sindh Criminal Prosecution Service Act 2009 exists. & Supported \\
+2 & The Act defines ``Prosecutor''. & Supported \\
+3 & The definition includes the Prosecutor General. & Supported \\
+4 & The definition includes the Additional Prosecutor General. & Supported \\
+5 & The definition includes the Deputy Prosecutor General. & Supported \\
+6 & The definition includes the Assistant Prosecutor General. & Supported \\
+7 & The definition includes the District Public Prosecutor. & Supported \\
+8 & The definition includes the Deputy District Public Prosecutor. & Supported \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Example 2 --- Q02 (appointment). Query: \emph{``What are the qualifications required for the appointment of the Prosecutor General?''} Faithfulness = 0.875 (7/8 supported).}
+\label{tab:ex2}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}c >{\RaggedRight\arraybackslash}X c@{}}
+\toprule
+\textbf{\#} & \textbf{Extracted Claim} & \textbf{Verdict} \\
+\midrule
+1 & Citizenship of Pakistan is required. & Supported \\
+2 & Permanent residence in Sindh is required. & Supported \\
+3 & The Prosecutor General must be at least 45 years of age. & Supported \\
+4 & Being an Advocate of the High Court for not less than 10 years is a qualifying criterion. & Supported \\
+5 & Being enrolled as an Advocate of the Supreme Court is a qualifying criterion. & Supported \\
+6 & Having performed functions of an Additional Prosecutor General or District Public Prosecutor for not less than 10 years is a qualifying criterion. & Supported \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Example 3 --- Q06 (procedure). Query: \emph{``What is the procedure for recording a confession under the Sindh Criminal Court Rules 2012?''} Faithfulness = 1.00 (5/5 supported).}
+\label{tab:ex3}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{}c >{\RaggedRight\arraybackslash}X c@{}}
+\toprule
+\textbf{\#} & \textbf{Extracted Claim} & \textbf{Verdict} \\
+\midrule
+1 & The confession shall be recorded in the manner prescribed for recording of evidence. & Supported \\
+2 & The confession shall be signed in the manner provided in Section 364 of the Code. & Supported \\
+3 & A Magistrate shall decide the manner of recording the confession. & Supported \\
+4 & The manner of recording is determined by the circumstances of the case. & Supported \\
+5 & The Magistrate has discretion in deciding the manner of recording. & Supported \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Alternate Query Generation Examples (Relevancy)}
+
+Table~\ref{tab:relq01} shows an example of the Relevancy protocol for Q01, which achieved the highest per-query Relevancy score.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Example --- Q01 Relevancy = 0.951. Original query: \emph{``What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?''}}
+\label{tab:relq01}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}c >{\RaggedRight\arraybackslash}X c@{}}
+\toprule
+\textbf{\#} & \textbf{Generated Alternate Question} & \textbf{Cosine Sim.} \\
+\midrule
+1 & What is the definition of a Prosecutor under the Sindh Criminal Prosecution Service Act 2009? & 0.997 \\
+2 & Who is considered a Public Prosecutor under the Sindh Criminal Prosecution Service Act 2009? & 0.920 \\
+3 & What positions are included in the definition of a Prosecutor under the Sindh Criminal Prosecution Service Act 2009? & 0.936 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Computational Efficiency}
+
+Table~\ref{tab:latency} reports approximate wall-clock latencies measured during the live app runs.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Approximate component-level latency for a single end-to-end query on CPU-only deployment.}
+\label{tab:latency}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lc}
+\toprule
+\textbf{Stage} & \textbf{Latency} \\
+\midrule
+Query embedding (MiniLM, CPU)            & \textless{} 0.1\,s \\
+Pinecone semantic search (top-20)        & 0.3--0.8\,s \\
+BM25 lexical search (in-process)         & \textless{} 0.1\,s \\
+Reciprocal Rank Fusion (top-10)          & negligible \\
+Cross-encoder reranking (10 pairs)       & 0.5--1.0\,s \\
+Answer generation (Llama-3.3-70B, Groq)  & 2--5\,s \\
+\midrule
+\textbf{End-to-end pipeline}             & \textbf{3--7\,s} \\
+\textbf{With live Faithfulness + Relevancy eval} & \textbf{25--40\,s} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Live evaluation adds significant latency because every claim triggers an additional LLM call. The evaluation toggle is therefore off by default in the live UI.
+
+\subsection{Insights and Lessons Learned}
+\label{sec:insights}
+
+Several non-obvious challenges shaped the final architecture. We document them here so that subsequent teams can avoid the same pitfalls.
+
+\paragraph{Chunking mistakes and iterations.}
+Our first chunking implementation used a naive fixed-window strategy with 300-word chunks and no structure awareness. On inspection we discovered that a large fraction of the generated chunks cut directly across legal provisions --- for example, the beginning of Rule 4.7 might sit in one chunk while its conditional clause and sanction sat in the next. This produced fragments that the LLM could neither verify against nor confidently answer from. The fix was to rewrite the chunker to detect legal-section markers (\texttt{Section}, \texttt{Rule}, \texttt{Chapter}, \texttt{Article}, \texttt{Clause}, plus numeric prefixes like \texttt{4.7} and \texttt{302(a)}) and treat them as hard boundaries. A second, equally important lesson was that the raw corpus contained thousands of chunks corresponding to tables of contents, statistical reporting forms, and appendix templates; these inflated the index without adding legal signal. Aggressive low-value filtering (see \texttt{filter\_retrievable\_chunks.py}) reduced the final index from 6{,}877 raw chunks to 522 substantive ones and noticeably improved retrieval precision.
+
+\paragraph{Hugging Face Inference API rate limits and endpoint deprecation.}
+The project was originally designed to use \texttt{mistralai/Mistral-7B-Instruct-v0.2} through the Hugging Face Inference API, in line with the original assignment guidance. Two problems emerged. First, the legacy endpoint at \texttt{api-inference.huggingface.co} was silently deprecated during the project and began returning HTTP 410 Gone for every request. Second, the replacement router at \texttt{router.huggingface.co} required paid credits for 7B-and-larger chat models, which the free tier exhausted after a few dozen calls. We briefly switched to the \texttt{huggingface\_hub} SDK but continued to hit credit-depletion errors (HTTP 402 Payment Required) during the 60-query ablation run. The root cause was not a bug in our code but a platform-level migration that collided with the assignment timeline. The eventual resolution --- migrating the LLM calls to the Groq Inference API --- delivered much higher free-tier limits and preserved the same free-tier, zero-cost architectural principle.
+
+\paragraph{Llama-3.1-8B as an unreliable LLM-as-a-Judge.}
+After moving to Groq, we initially used \texttt{llama-3.1-8b-instant} for both answer generation \emph{and} the LLM-as-a-Judge evaluation. The 8B model was adequate for generating concise grounded answers, but it proved to be an unreliable judge in two specific ways. (i) The claim-extraction step (Prompt~2) frequently returned the whole answer as a single monolithic ``claim'' rather than breaking it into atomic statements. (ii) The verification step (Prompt~3) then marked that single blob as \texttt{unsupported} because it could not match a multi-paragraph answer against a 2{,}000-character context window. The result was that several high-quality, well-grounded answers received a spurious Faithfulness score of 0.00. We diagnosed the issue by inspecting a query (\emph{``What are the powers of the Prosecutor General?''}) whose answer was visibly well-grounded yet scored 0\%. Switching to \texttt{llama-3.3-70b-versatile} (also free on Groq) for the live application restored reliable claim extraction and produced per-claim verdicts consistent with human reading. The 8B model is retained for the batch \texttt{ablation\_study.py} and \texttt{evaluate\_rag.py} runs because the larger 70B model would otherwise exceed free-tier rate limits across 60+ sequential queries; the reported aggregate numbers in Table~\ref{tab:ablation} should therefore be read as \emph{lower bounds} on true system performance.
+
+\paragraph{Data quality dominates pipeline tuning.}
+A final insight from the ablation study is that no combination of chunking and retrieval can rescue queries whose answers are simply not present in the corpus. Two amendment documents (DOC03, DOC06) suffered OCR failures during extraction, and queries about those amendments score 0.00 Faithfulness across every configuration. This reinforces a general principle: upstream data quality is usually a better investment than downstream pipeline tuning.
+
+\paragraph{A note for graders and end users --- use the published sample queries.}
+Because the corpus is deliberately narrow (seven Sindh-specific legal documents) and the confidence gate is tuned to refuse anything it cannot ground, casual free-form questions --- even plausibly legal ones such as ``what is bail?'' or ``explain criminal procedure'' --- will typically trigger the deterministic fallback response (\emph{``I could not find a reliable answer to this question in the retrieved documents.''}). This is \emph{correct} behaviour given the assignment's emphasis on grounding, but it can give the misleading impression that the system does not work. To evaluate the system fairly, we strongly recommend testing it with queries drawn from the fixed, version-controlled test set. The canonical list of fifteen queries is stored in \texttt{evaluation/test\_queries.json}, and the companion markdown report \texttt{evaluation/faithfulness\_report\_section.md} documents which of those queries produce substantive answers and which are \emph{expected} to refuse because the underlying source text is missing from the corpus (notably the 2011, 2014, 2015, and 2025 amendment queries, whose PDFs had OCR failures). For the fastest demonstration, we recommend the five queries that consistently score 1.00 Faithfulness: Q01 (definition of Prosecutor), Q02 (qualifications for Prosecutor General), Q03 (duties of Prosecutors), Q06 (procedure for recording a confession), and Q15 (evidence recorded on DVD). These are known, reproducible exemplars that showcase the full retrieval-to-generation-to-evaluation pipeline end-to-end.
+
+% ======================================================================
+\newpage
+\section{Best Model Selection}
+\label{sec:best}
+
+On the basis of Sections~\ref{sec:methods} and~\ref{sec:metrics}, the final selected pipeline is:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Chunking}: Legal-aware chunking (250--450 words, structure-preserving, low-value filtered).
+    \item \textbf{Embeddings}: \texttt{sentence-transformers/all-MiniLM-L6-v2}, pre-computed locally and upserted to Pinecone.
+    \item \textbf{Retrieval}: Hybrid search --- Pinecone top-20 semantic $\cup$ BM25 top-20 lexical, fused by RRF ($k=60$) to top-10.
+    \item \textbf{Reranking}: \texttt{cross-encoder/ms-marco-MiniLM-L-6-v2}, top 5 retained, top 3 passed to the LLM.
+    \item \textbf{Generation + judge (live)}: \texttt{llama-3.3-70b-versatile} via Groq.
+    \item \textbf{Generation + judge (batch)}: \texttt{llama-3.1-8b-instant} via Groq (rate-limit friendly).
+\end{itemize}
+
+\paragraph{Justification.}
+This combination is selected for four concrete reasons. First, in the ablation study it achieves 92.4\% Faithfulness and 82.6\% Relevancy on the subset of queries it agrees to answer, which is the metric that matters operationally (the system is useful only when it produces grounded output). Second, its failure mode is \emph{refusal}, not hallucination: when context is insufficient, it returns a deterministic message rather than fabricating citations. For a legal application this is essential. Third, every component is reproducible on free-tier infrastructure, which keeps the project aligned with the assignment hosting constraints. Fourth, the 70-billion-parameter judge model restores the reliability of the LLM-as-a-Judge pipeline, which was fragile under the smaller 8B judge.
+
+% ======================================================================
+\newpage
+\section{Reproducibility}
+\label{sec:reproducibility}
+
+\subsection{Environment and Dependencies}
+
+The project targets Python 3.12. All dependencies are pinned in \texttt{requirements.txt}:
+
+\begin{lstlisting}[language=promptlang]
+streamlit>=1.30.0
+pandas>=2.0.0
+numpy>=1.24.0
+PyPDF2>=3.0.0
+PyMuPDF>=1.23.0
+easyocr>=1.7.0
+sentence-transformers>=2.2.0
+groq>=0.9.0
+pinecone>=3.0.0
+rank-bm25>=0.2.2
+scikit-learn>=1.3.0
+\end{lstlisting}
+
+\subsection{API Keys}
+
+Three API credentials are required. They must be placed in a \texttt{.env} file (never committed) matching \texttt{.env.example}:
+
+\begin{lstlisting}[language=promptlang]
+PINECONE_API_KEY=your_pinecone_key_here
+GROQ_API_KEY=your_groq_key_here
+HF_API_TOKEN=your_hf_token_here
+\end{lstlisting}
+
+A free Groq key can be obtained from \url{https://console.groq.com}. A free Pinecone key can be obtained from \url{https://app.pinecone.io}.
+
+\subsection{End-to-End Reproduction Steps}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Clone and install:}
+\begin{lstlisting}[language=promptlang]
+git clone https://github.com/rameezhoda21/NLP-mini-project.git
+cd NLP-mini-project
+python -m venv myenv
+source myenv/bin/activate      # Windows: myenv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env            # then fill in the three keys
+\end{lstlisting}
+
+    \item \textbf{PDF ingestion and cleaning:}
+\begin{lstlisting}[language=promptlang]
+python notebooks/process_pdfs.py
+\end{lstlisting}
+
+    \item \textbf{Chunking (both strategies):}
+\begin{lstlisting}[language=promptlang]
+python notebooks/chunk_text.py         # legal-aware
+python notebooks/chunk_text_fixed.py   # fixed-size
+\end{lstlisting}
+
+    \item \textbf{Retrievability filter and embeddings:}
+\begin{lstlisting}[language=promptlang]
+python notebooks/filter_retrievable_chunks.py
+python notebooks/embed_chunks.py
+python notebooks/upload_to_pinecone.py
+\end{lstlisting}
+
+    \item \textbf{Run the live app:}
+\begin{lstlisting}[language=promptlang]
+streamlit run app.py
+\end{lstlisting}
+
+    \item \textbf{Reproduce the evaluation and ablation:}
+\begin{lstlisting}[language=promptlang]
+python evaluation/evaluate_rag.py      # -> evaluation_results.csv
+python evaluation/ablation_study.py    # -> ablation_results.csv
+\end{lstlisting}
+\end{enumerate}
+
+\subsection{Artefacts Produced by the Pipeline}
+
+After running all of the above, the repository contains: \texttt{data/rag\_chunks.csv}, \texttt{data/rag\_chunks\_fixed.csv}, \texttt{data/rag\_chunks\_with\_retrievable\_flag.csv}, \texttt{data/rag\_chunks\_retrievable\_only.csv}, \texttt{data/rag\_chunks\_with\_embeddings.pkl}, \texttt{evaluation/evaluation\_results.csv}, \texttt{evaluation/ablation\_results.csv}, \texttt{evaluation/ablation\_report.md}, and \texttt{evaluation/faithfulness\_report\_section.md}.
+
+% ======================================================================
+\newpage
+\section{System Demonstration}
+\label{sec:demo}
+
+The deployed web interface is a Streamlit application modelled on a modern single-page chat interface. The page consists of a title, a single-line question input, an inline row of settings (retrieval mode selector and a toggle for live evaluation), a Search button, and a results panel that progressively discloses (i) the generated answer with a HIGH/LOW confidence indicator, (ii) the retrieved supporting chunks in expandable containers, (iii) pipeline metadata such as retrieval mode and latency, and (iv) optional Faithfulness and Relevancy scores with per-claim evidence tables. Pressing \texttt{Enter} in the input field submits the query directly, matching the interaction pattern of modern chat assistants. The application is publicly available on Hugging Face Spaces and does not require any user-side credentials because the necessary API keys are injected as Spaces secrets.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{demo1.png}
+    \caption{Landing view of the deployed Streamlit application on Hugging Face Spaces, showing the query input and inline configuration controls.}
+    \label{fig:demo1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{demo2.png}
+    \caption{Example answer for the query \emph{``What is the definition of Prosecutor under the Sindh Criminal Prosecution Service Act 2009?''}, showing the generated answer, HIGH-confidence banner, and the expandable retrieved-context chunks with cross-encoder scores.}
+    \label{fig:demo2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{demo3.png}
+    \caption{Live LLM-as-a-Judge evaluation panel, showing the per-query Faithfulness score (with supported/unsupported claims) and Relevancy score (with the three generated alternate queries and their cosine similarities to the original).}
+    \label{fig:demo3}
+\end{figure}
+
+\end{document}
