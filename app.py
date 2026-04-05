@@ -943,7 +943,7 @@ def run_rag_pipeline(
 
     # --- Answer generation ---
     if not confidence["is_in_scope"]:
-        answer = FALLBACK_RESPONSE
+        answer = "I could not find a reliable answer to this question in the retrieved documents."
     else:
         try:
             answer = generate_answer(query, answer_chunks)
